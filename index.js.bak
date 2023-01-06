@@ -1,0 +1,103 @@
+const Discord = require("discord.js");
+
+const ytdl = require("ytdl-core");
+
+const Client = new Discord.Client; 
+
+const prefix = "$";
+
+var list = [];
+
+Client.on("ready", () => {
+    console.log("bot fonctione ");
+});
+
+Client.on("message", async message => { 
+    if(message.content === prefix +"playlist"){
+        let msg = "**FILE D'ATTENTE !**\n";
+        for(var i = 0;i < list.lenght;i++){
+            let name;
+            await ytdl.getInfo(list[i], (err, info) => {
+                if(err){
+                    console.log("erreur de lien : " + err);
+                    list.splice(i, 1);
+                }
+                else {
+                    name = info.title;
+                }
+            });
+            msg += "> " + i + " - " + name + "\n" ;
+        }
+        message.channel.send(msg);
+    }
+    else if(message.content.startsWith(prefix + "play")){
+        if(message.member.voice.channel){  
+            let args = message.content.split(" ");
+
+            if(args[1] == undefined || !args[1].startsWith("https://www.youtube.com/watch?v=")){
+                 message.reply("ton lien marche pas");
+            }
+            else {
+                if(list.length > 0){
+                    list.push(args[1]);
+                    message.reply("Je peux pas car je suis un fils de pute.");
+                    message.member.voice.channel.join().then(connection => {
+                        playMusic(connection);
+
+                        connection.on("disconnect", () => {
+                            list = [];                       
+                        });
+
+                    }).catch(err => {
+                        message.replay("Erreur lors de la connexion : " + err);
+                    });
+                }
+                else {
+                    list.push(args[1]);
+                    message.reply("Je peux pas car je suis un fils de pute.");
+
+                }
+            }
+        }
+    }                                          
+});
+
+function playMusic(connection){
+    let dispatcher = connection.play(ytdl(list[0], { quality: "highestaudio"}));
+
+    dispatcher.on("finish", () => {
+        list.shift();
+        dispatcher.destroy();
+
+        if(list.length > 0){
+            playMusic(connection);
+        }
+        else {
+            connection.disconnect();
+        }
+    });
+
+    dispatcher.on("error", err => {
+        console.log("erreur de dispatcher : " + err);
+        dispatcher.destroy();
+        connection.disconnect();
+
+    });
+
+    bot.on('message', async message => {
+        if (message.author.bot) return;
+        if (message.content.toLowerCase().includes('salut')){
+          message.channel.send(`Salut ${user}, tu vas bien?`);
+        }
+      });
+       
+      bot.on('message', async message => {
+        if (message.author.bot) return;
+        if (message.content === "Comme un lundi"){ 
+            message.channel.send(`MDR, toujours aussi décalé le ${user}`);
+          }  
+      });   
+}
+
+
+Client.login("OTM4ODk2MzczNDY4NzYyMTEy.Yfw9Yw.p5qeOo77OIlg7aB1jAzottBRNUI");
